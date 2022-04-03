@@ -9,6 +9,7 @@ import (
 )
 
 var (
+	fatalLog = log.New(os.Stdout, "\033[31m[error ]\033[0m ", log.LstdFlags|log.Lshortfile)
 	errorLog = log.New(os.Stdout, "\033[31m[error ]\033[0m ", log.LstdFlags|log.Lshortfile)
 	infoLog  = log.New(os.Stdout, "\033[32m[info  ]\033[0m ", log.LstdFlags|log.Lshortfile)
 	debugLog = log.New(os.Stdout, "\033[34m[debug ]\033[0m ", log.LstdFlags|log.Lshortfile)
@@ -17,6 +18,8 @@ var (
 )
 
 var (
+	Fatal  = fatalLog.Fatalln
+	Fatalf = fatalLog.Fatalf
 	Error  = errorLog.Println
 	Errorf = errorLog.Printf
 	Info   = infoLog.Println
@@ -29,6 +32,7 @@ const (
 	DebugLevel = iota
 	InfoLevel
 	ErrorLevel
+	FatalLevel
 	Disabled
 )
 
@@ -40,6 +44,10 @@ func SetPath(path string, level int) {
 
 	if err != nil {
 		log.Fatalln("Failed to open error log file:", err)
+	}
+
+	if FatalLevel >= level {
+		errorLog.SetOutput(io.MultiWriter(file, os.Stderr))
 	}
 
 	if ErrorLevel >= level {
@@ -61,6 +69,10 @@ func SetLevel(level int) {
 
 	for _, logger := range loggers {
 		logger.SetOutput(os.Stdout)
+	}
+
+	if FatalLevel < level {
+		fatalLog.SetOutput(ioutil.Discard)
 	}
 
 	if ErrorLevel < level {
